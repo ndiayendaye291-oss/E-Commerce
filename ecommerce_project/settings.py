@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -167,3 +168,40 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/login/'
 LOGOUT_REDIRECT_URL = '/'
+
+# Jazzmin Admin Customization Settings
+JAZZMIN_SETTINGS = {
+    "site_title": "Administration E-Commerce",
+    "site_header": "ISEPAT E-Commerce",
+    "site_brand": "E-Commerce ISEPAT",
+    "welcome_sign": "Bienvenue dans l'espace d'administration ISEPAT",
+    "copyright": "E-Commerce ISEPAT Ltd",
+    "search_model": "catalog.Product",
+    "topmenu_links": [
+        {"name": "Voir le site", "url": "index", "permissions": ["auth.view_user"]},
+        {"app": "catalog"},
+    ],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "changeform_format": "horizontal_tabs",
+    "dark_mode_theme": "darkly",
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-dark",
+    "accent": "accent-warning",
+    "navbar": "navbar-dark bg-dark",
+    "no_navbar_border": False,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-warning",
+    "sidebar_nav_small_text": False,
+    "theme": "darkly",
+    "dark_mode_theme": "darkly",
+}
