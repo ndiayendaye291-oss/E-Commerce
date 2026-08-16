@@ -1,0 +1,54 @@
+{% extends 'frontend/base.html' %}
+
+{% block content %}
+<div class="container fade-in-up">
+    <a href="{% url 'index' %}" class="btn btn-outline-secondary mb-4">
+        &larr; Retour au catalogue
+    </a>
+
+    <div class="card p-5">
+        <div class="row align-items-center">
+            <div class="col-md-6 mb-4 mb-md-0">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid rounded-4 shadow" style="max-height: 450px; width: 100%; object-fit: cover;">
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center bg-secondary bg-opacity-25 rounded-4" style="height: 350px;">
+                        <span class="text-muted fs-5">Aucune image disponible</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-6 ps-md-5">
+                <span class="badge bg-warning text-dark mb-2 px-3 py-2 text-uppercase fw-bold">{{ product.category.name }}</span>
+                <h1 class="display-5 fw-bold mb-3">{{ product.name }}</h1>
+                
+                {% if product.seller %}
+                    <p class="text-muted small mb-3">Vendu par <strong class="text-white">{{ product.seller.username }}</strong></p>
+                {% endif %}
+
+                <h2 class="text-success fw-bold mb-4 display-6">{{ product.price }} CFA</h2>
+
+                <div class="mb-4">
+                    <h5 class="fw-bold text-light mb-2">Description du produit :</h5>
+                    <p class="text-muted leading-relaxed">{{ product.description }}</p>
+                </div>
+
+                <div class="mb-4">
+                    {% if product.stock > 0 %}
+                        <span class="badge bg-success px-3 py-2 fs-6">📦 En Stock ({{ product.stock }} disponibles)</span>
+                    {% else %}
+                        <span class="badge bg-danger px-3 py-2 fs-6">❌ Rupture de Stock</span>
+                    {% endif %}
+                </div>
+
+                <form action="{% url 'add_to_cart' product.id %}" method="POST" class="d-flex gap-3">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary btn-lg px-5 py-3 rounded-pill {% if product.stock <= 0 %}disabled{% endif %}">
+                        🛒 Ajouter au Panier
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
