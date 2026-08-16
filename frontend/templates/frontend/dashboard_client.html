@@ -12,6 +12,7 @@
                     <tr>
                         <th>N° Commande</th>
                         <th>Date</th>
+                        <th>Adresse de livraison</th>
                         <th>Statut</th>
                         <th>Total</th>
                         <th>Livraison</th>
@@ -22,6 +23,7 @@
                     <tr>
                         <td>#{{ order.id }}</td>
                         <td>{{ order.created_at|date:"d M Y, H:i" }}</td>
+                        <td><small class="text-white-50">{{ order.shipping_address }}</small></td>
                         <td>
                             <span class="badge {% if order.status == 'DELIVERED' %}bg-success{% elif order.status == 'PENDING' %}bg-warning{% else %}bg-info{% endif %}">
                                 {{ order.get_status_display }}

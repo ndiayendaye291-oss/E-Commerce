@@ -114,9 +114,15 @@ def checkout(request):
         cart.items.all().delete()
         
         messages.success(request, "Commande validée avec succès !")
-        return redirect('dashboard')
+        return redirect('order_success', order_id=order.id)
         
     return render(request, 'frontend/checkout.html', {'cart': cart})
+
+@login_required
+def order_success(request, order_id):
+    from orders.models import Order
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    return render(request, 'frontend/order_success.html', {'order': order})
 
 @login_required
 def dashboard(request):
