@@ -1,0 +1,47 @@
+{% extends 'frontend/base.html' %}
+
+{% block content %}
+<div class="card p-4">
+    <h3 class="mb-4">Mon Tableau de Bord (Client)</h3>
+    <h5 class="mb-3">Historique des commandes</h5>
+    
+    {% if orders %}
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>N° Commande</th>
+                        <th>Date</th>
+                        <th>Statut</th>
+                        <th>Total</th>
+                        <th>Livraison</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.created_at|date:"d M Y, H:i" }}</td>
+                        <td>
+                            <span class="badge {% if order.status == 'DELIVERED' %}bg-success{% elif order.status == 'PENDING' %}bg-warning{% else %}bg-info{% endif %}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="text-success fw-bold">{{ order.total_amount }} CFA</td>
+                        <td>
+                            {% if order.delivery %}
+                                {{ order.delivery.get_status_display }}
+                            {% else %}
+                                Non assignée
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">Vous n'avez passé aucune commande pour le moment.</div>
+    {% endif %}
+</div>
+{% endblock %}

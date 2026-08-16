@@ -63,6 +63,9 @@
                     </li>
                     {% if user.is_authenticated %}
                     <li class="nav-item ms-3">
+                        <a class="nav-link text-warning" href="{% url 'dashboard' %}">Tableau de bord</a>
+                    </li>
+                    <li class="nav-item ms-3">
                         <span class="text-muted small me-2">Salut, {{ user.username }}</span>
                         <a class="btn btn-outline-light btn-sm" href="{% url 'logout' %}">Déconnexion</a>
                     </li>

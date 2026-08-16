@@ -1,0 +1,48 @@
+{% extends 'frontend/base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-7">
+        <div class="card p-4">
+            <h3 class="mb-4">Finaliser la commande</h3>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Adresse de livraison</label>
+                    <textarea name="address" class="form-control" rows="3" required>{{ user.address|default:"" }}</textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Méthode de paiement</label>
+                    <select name="payment_method" class="form-select">
+                        <option value="CASH">Paiement à la livraison (Espèces)</option>
+                        <option value="MOBILE">Mobile Money (Simulation)</option>
+                        <option value="CARD">Carte Bancaire (Simulation)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Confirmer et Payer</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-md-5">
+        <div class="card p-4">
+            <h4 class="mb-4">Récapitulatif</h4>
+            <ul class="list-group list-group-flush mb-3" style="background: transparent;">
+                {% for item in cart.items.all %}
+                <li class="list-group-item bg-transparent text-white d-flex justify-content-between lh-sm border-secondary">
+                    <div>
+                        <h6 class="my-0">{{ item.product.name }}</h6>
+                        <small class="text-muted">Quantité: {{ item.quantity }}</small>
+                    </div>
+                    <span class="text-muted">{{ item.total_price }} CFA</span>
+                </li>
+                {% endfor %}
+            </ul>
+            <div class="d-flex justify-content-between mt-3">
+                <span class="fs-5 fw-bold">Total</span>
+                <span class="fs-5 fw-bold text-success">{{ cart.total_cart_price }} CFA</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -44,3 +44,67 @@ def add_to_cart(request, product_id):
     
     messages.success(request, f"{product.name} ajouté au panier.")
     return redirect('index')
+
+@login_required
+def checkout(request):
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    if not cart.items.exists():
+        messages.warning(request, "Votre panier est vide.")
+        return redirect('index')
+    
+    if request.method == 'POST':
+        # Create Order
+        address = request.POST.get('address', request.user.address)
+        payment_method = request.POST.get('payment_method', 'CASH')
+        
+        from orders.models import Order, OrderItem, Payment
+        
+        order = Order.objects.create(
+            user=request.user,
+            shipping_address=address,
+            total_amount=sum(item.total_price for item in cart.items.all())
+        )
+        
+        # Create OrderItems and reduce stock
+        for item in cart.items.all():
+            OrderItem.objects.create(
+                order=order,
+                product=item.product,
+                quantity=item.quantity,
+                unit_price=item.product.price
+            )
+            # Reduce stock
+            item.product.stock -= item.quantity
+            item.product.save()
+            
+        # Create Payment
+        Payment.objects.create(
+            order=order,
+            amount=order.total_amount,
+            method=payment_method,
+            is_successful=True if payment_method == 'CASH' else False
+        )
+        
+        # Create Delivery (if applicable, let's create a pending delivery)
+        from delivery.models import Delivery
+        Delivery.objects.create(order=order)
+        
+        # Clear cart
+        cart.items.all().delete()
+        
+        messages.success(request, "Commande validée avec succès !")
+        return redirect('dashboard')
+        
+    return render(request, 'frontend/checkout.html', {'cart': cart})
+
+@login_required
+def dashboard(request):
+    user = request.user
+    if user.role == 'DELIVERY':
+        from delivery.models import Delivery
+        deliveries = Delivery.objects.filter(delivery_person=user)
+        return render(request, 'frontend/dashboard_delivery.html', {'deliveries': deliveries})
+    else:
+        from orders.models import Order
+        orders = Order.objects.filter(user=user).order_by('-created_at')
+        return render(request, 'frontend/dashboard_client.html', {'orders': orders})

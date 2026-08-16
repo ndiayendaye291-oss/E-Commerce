@@ -56,7 +56,7 @@
                 <span class="fs-5 fw-bold">Total à payer</span>
                 <span class="fs-5 fw-bold text-success">{{ cart.total_cart_price|default:"0" }} CFA</span>
             </div>
-            <a href="#" class="btn btn-primary w-100 {% if not cart.items.all %}disabled{% endif %}">Passer à la caisse</a>
+            <a href="{% url 'checkout' %}" class="btn btn-primary w-100 {% if not cart.items.all %}disabled{% endif %}">Passer à la caisse</a>
         </div>
     </div>
 </div>
