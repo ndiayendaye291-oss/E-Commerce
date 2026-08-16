@@ -35,10 +35,19 @@ def view_cart(request):
 @login_required
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
+    
+    if product.stock <= 0:
+        messages.error(request, f"Désolé, le produit {product.name} est en rupture de stock.")
+        return redirect('index')
+        
     cart, created = Cart.objects.get_or_create(user=request.user)
     
     cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product)
+    
     if not item_created:
+        if cart_item.quantity >= product.stock:
+            messages.error(request, f"Vous ne pouvez pas ajouter plus de {product.name} (Stock max atteint).")
+            return redirect('index')
         cart_item.quantity += 1
         cart_item.save()
     
@@ -108,3 +117,24 @@ def dashboard(request):
         from orders.models import Order
         orders = Order.objects.filter(user=user).order_by('-created_at')
         return render(request, 'frontend/dashboard_client.html', {'orders': orders})
+
+@login_required
+def complete_delivery(request, delivery_id):
+    if request.user.role != 'DELIVERY':
+        messages.error(request, "Accès non autorisé.")
+        return redirect('index')
+        
+    from delivery.models import Delivery
+    delivery = get_object_or_404(Delivery, id=delivery_id, delivery_person=request.user)
+    
+    if request.method == 'POST':
+        delivery.status = 'DELIVERED'
+        delivery.save()
+        
+        # Mettre à jour le statut de la commande correspondante
+        delivery.order.status = 'DELIVERED'
+        delivery.order.save()
+        
+        messages.success(request, f"La livraison #{delivery.id} a été marquée comme terminée.")
+        
+    return redirect('dashboard')

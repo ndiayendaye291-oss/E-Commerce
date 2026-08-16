@@ -29,7 +29,14 @@
                             </span>
                         </td>
                         <td>
-                            <a href="/admin/delivery/delivery/{{ delivery.id }}/change/" class="btn btn-sm btn-outline-warning">Mettre à jour</a>
+                            {% if delivery.status != 'DELIVERED' %}
+                            <form action="{% url 'complete_delivery' delivery.id %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-success">Marquer comme Livrée</button>
+                            </form>
+                            {% else %}
+                            <span class="text-success fw-bold">Terminée</span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
