@@ -136,8 +136,16 @@ def dashboard(request):
         deliveries = Delivery.objects.filter(delivery_person=user)
         return render(request, 'frontend/dashboard_delivery.html', {'deliveries': deliveries})
     elif user.role in ['SELLER', 'ADMIN']:
+        from orders.models import Order
+        from accounts.models import CustomUser
         products = Product.objects.filter(seller=user) if user.role == 'SELLER' else Product.objects.all()
-        return render(request, 'frontend/dashboard_seller.html', {'products': products})
+        orders = Order.objects.all().order_by('-created_at')
+        deliverers = CustomUser.objects.filter(role='DELIVERY')
+        return render(request, 'frontend/dashboard_seller.html', {
+            'products': products, 
+            'orders': orders, 
+            'deliverers': deliverers
+        })
     else:
         from orders.models import Order
         orders = Order.objects.filter(user=user).order_by('-created_at')
@@ -181,4 +189,33 @@ def complete_delivery(request, delivery_id):
         
         messages.success(request, f"La livraison #{delivery.id} a été marquée comme terminée.")
         
+    return redirect('dashboard')
+
+@login_required
+def assign_delivery(request, order_id):
+    if request.user.role not in ['SELLER', 'ADMIN'] and not request.user.is_staff:
+        messages.error(request, "Accès réservé aux vendeurs et administrateurs.")
+        return redirect('index')
+        
+    if request.method == 'POST':
+        deliverer_id = request.POST.get('deliverer_id')
+        from orders.models import Order
+        from delivery.models import Delivery
+        from accounts.models import CustomUser
+        
+        order = get_object_or_404(Order, id=order_id)
+        delivery, _ = Delivery.objects.get_or_create(order=order)
+        
+        if deliverer_id:
+            deliverer = get_object_or_404(CustomUser, id=deliverer_id, role='DELIVERY')
+            delivery.delivery_person = deliverer
+            delivery.status = 'ASSIGNED'
+            delivery.save()
+            
+            order.status = 'SHIPPED'
+            order.save()
+            messages.success(request, f"La commande #{order.id} a été validée et assignée au livreur {deliverer.username} !")
+        else:
+            messages.warning(request, "Veuillez sélectionner un livreur.")
+            
     return redirect('dashboard')

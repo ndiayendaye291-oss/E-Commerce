@@ -58,5 +58,61 @@
             Vous n'avez encore publié aucun produit. Cliquez sur "Publier un nouveau produit" pour commencer.
         </div>
     {% endif %}
+
+    <!-- Section Gestion des Commandes Clients -->
+    <div class="mt-5 pt-4 border-top border-secondary">
+        <h4 class="fw-bold mb-3 text-warning">🛒 Commandes Clients à Valider & Assigner</h4>
+        {% if orders %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>N° Commande</th>
+                            <th>Client</th>
+                            <th>Adresse de livraison</th>
+                            <th>Montant</th>
+                            <th>Statut Commande</th>
+                            <th>Assigner un Livreur</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td class="fw-bold">#{{ order.id }}</td>
+                            <td>{{ order.user.username }}</td>
+                            <td><small class="text-white-50">{{ order.shipping_address }}</small></td>
+                            <td class="text-success fw-bold">{{ order.total_amount }} CFA</td>
+                            <td>
+                                <span class="badge {% if order.status == 'DELIVERED' %}bg-success{% elif order.status == 'SHIPPED' %}bg-info{% else %}bg-warning{% endif %}">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if order.status != 'DELIVERED' %}
+                                    <form action="{% url 'assign_delivery' order.id %}" method="POST" class="d-flex gap-2">
+                                        {% csrf_token %}
+                                        <select name="deliverer_id" class="form-select form-select-sm py-1" style="max-width: 170px;">
+                                            <option value="">Sélectionner Livreur</option>
+                                            {% for del in deliverers %}
+                                                <option value="{{ del.id }}" {% if order.delivery and order.delivery.delivery_person == del %}selected{% endif %}>
+                                                    {{ del.username }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-warning">Valider & Assigner</button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-success small fw-bold">Commande Livrée</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted">Aucune commande client pour le moment.</p>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}
