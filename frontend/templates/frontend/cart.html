@@ -1,9 +1,9 @@
 {% extends 'frontend/base.html' %}
 
 {% block content %}
-<div class="row">
+<div class="row fade-in-up">
     <div class="col-md-8">
-        <h2 class="mb-4">Votre Panier</h2>
+        <h2 class="mb-4 fw-bold" style="letter-spacing: -1px;">Votre Panier</h2>
         
         {% if cart.items.all %}
             <div class="card p-3 mb-4">

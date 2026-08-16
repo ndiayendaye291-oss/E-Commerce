@@ -1,9 +1,9 @@
 {% extends 'frontend/base.html' %}
 
 {% block content %}
-<div class="card p-4">
-    <h3 class="mb-4">Espace Livreur</h3>
-    <h5 class="mb-3">Livraisons qui vous sont assignées</h5>
+<div class="card p-5 fade-in-up">
+    <h3 class="mb-4 fw-bold" style="letter-spacing: -1px;">Espace Livreur</h3>
+    <h5 class="mb-3 text-warning">Livraisons assignées</h5>
     
     {% if deliveries %}
         <div class="table-responsive">
