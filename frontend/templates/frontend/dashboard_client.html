@@ -45,5 +45,27 @@
     {% else %}
         <div class="alert alert-info">Vous n'avez passé aucune commande pour le moment.</div>
     {% endif %}
+
+    <!-- Demande de Partenariat -->
+    <div class="mt-5 pt-4 border-top border-secondary">
+        <h4 class="fw-bold mb-3 text-warning">💼 Devenir Partenaire ISEPAT</h4>
+        <div class="p-4 rounded-3" style="background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color);">
+            {% if user.role_request %}
+                <div class="alert alert-warning m-0">
+                    ⏳ <strong>Demande en cours :</strong> Votre candidature pour devenir <strong>{{ user.get_role_request_display }}</strong> a été transmise à l'administrateur et est en cours d'examen.
+                </div>
+            {% else %}
+                <p class="text-muted mb-3">Vous souhaitez vendre vos propres produits ou devenir livreur partenaire sur notre plateforme ?</p>
+                <div class="d-flex gap-3">
+                    <a href="{% url 'request_role' 'SELLER' %}" class="btn btn-outline-warning btn-sm px-4">
+                        🏪 Demander un compte Vendeur
+                    </a>
+                    <a href="{% url 'request_role' 'DELIVERY' %}" class="btn btn-outline-info btn-sm px-4">
+                        🛵 Demander un compte Livreur
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 </div>
 {% endblock %}

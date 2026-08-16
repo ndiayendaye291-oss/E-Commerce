@@ -141,10 +141,12 @@ def dashboard(request):
         products = Product.objects.filter(seller=user) if user.role == 'SELLER' else Product.objects.all()
         orders = Order.objects.all().order_by('-created_at')
         deliverers = CustomUser.objects.filter(role='DELIVERY')
+        role_requests = CustomUser.objects.filter(role_request__isnull=False).exclude(role_request='')
         return render(request, 'frontend/dashboard_seller.html', {
             'products': products, 
             'orders': orders, 
-            'deliverers': deliverers
+            'deliverers': deliverers,
+            'role_requests': role_requests
         })
     else:
         from orders.models import Order
@@ -218,4 +220,37 @@ def assign_delivery(request, order_id):
         else:
             messages.warning(request, "Veuillez sélectionner un livreur.")
             
+    return redirect('dashboard')
+
+@login_required
+def request_role(request, role):
+    if role not in ['SELLER', 'DELIVERY']:
+        messages.error(request, "Demande de rôle invalide.")
+        return redirect('dashboard')
+        
+    user = request.user
+    user.role_request = role
+    user.save()
+    messages.success(request, f"Votre demande pour devenir {user.get_role_request_display()} a été envoyée à l'administrateur !")
+    return redirect('dashboard')
+
+@login_required
+def approve_role(request, user_id, action):
+    if request.user.role != 'ADMIN' and not request.user.is_superuser:
+        messages.error(request, "Accès réservé aux administrateurs.")
+        return redirect('dashboard')
+        
+    from accounts.models import CustomUser
+    target_user = get_object_or_404(CustomUser, id=user_id)
+    
+    if action == 'approve' and target_user.role_request:
+        target_user.role = target_user.role_request
+        target_user.role_request = None
+        target_user.save()
+        messages.success(request, f"La demande de {target_user.username} a été approuvée avec succès ! Il est maintenant {target_user.get_role_display()}.")
+    elif action == 'reject':
+        target_user.role_request = None
+        target_user.save()
+        messages.info(request, f"La demande de {target_user.username} a été refusée.")
+        
     return redirect('dashboard')

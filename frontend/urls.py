@@ -16,4 +16,6 @@ urlpatterns = [
     path('add-product/', views.add_product, name='add_product'),
     path('complete-delivery/<int:delivery_id>/', views.complete_delivery, name='complete_delivery'),
     path('assign-delivery/<int:order_id>/', views.assign_delivery, name='assign_delivery'),
+    path('request-role/<str:role>/', views.request_role, name='request_role'),
+    path('approve-role/<int:user_id>/<str:action>/', views.approve_role, name='approve_role'),
 ]

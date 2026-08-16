@@ -9,6 +9,7 @@ class CustomUser(AbstractUser):
         ('DELIVERY', 'Livreur'),
     )
     role = models.CharField(max_length=15, choices=ROLE_CHOICES, default='CLIENT')
+    role_request = models.CharField(max_length=15, choices=ROLE_CHOICES, blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
 

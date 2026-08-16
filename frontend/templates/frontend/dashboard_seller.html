@@ -114,5 +114,49 @@
             <p class="text-muted">Aucune commande client pour le moment.</p>
         {% endif %}
     </div>
+
+    {% if user.role == 'ADMIN' or user.is_superuser %}
+    <!-- Section Approbation des Candidatures (Super Admin) -->
+    <div class="mt-5 pt-4 border-top border-secondary">
+        <h4 class="fw-bold mb-3 text-warning">👥 Candidatures & Demandes de Rôles à Valider</h4>
+        {% if role_requests %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Utilisateur</th>
+                            <th>Email</th>
+                            <th>Rôle Actuel</th>
+                            <th>Rôle Demandé</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req_user in role_requests %}
+                        <tr>
+                            <td class="fw-bold">{{ req_user.username }}</td>
+                            <td>{{ req_user.email|default:"Non renseigné" }}</td>
+                            <td><span class="badge bg-secondary">{{ req_user.get_role_display }}</span></td>
+                            <td><span class="badge bg-warning text-dark">{{ req_user.get_role_request_display }}</span></td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'approve_role' req_user.id 'approve' %}" class="btn btn-sm btn-success">
+                                        ✓ Approuver
+                                    </a>
+                                    <a href="{% url 'approve_role' req_user.id 'reject' %}" class="btn btn-sm btn-outline-danger">
+                                        ✗ Refuser
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted">Aucune candidature en attente pour le moment.</p>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
