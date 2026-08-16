@@ -150,9 +150,12 @@
                     <li class="nav-item ms-3">
                         <a class="nav-link text-warning" href="{% url 'dashboard' %}">Tableau de bord</a>
                     </li>
-                    <li class="nav-item ms-3">
+                    <li class="nav-item ms-3 d-flex align-items-center">
                         <span class="text-muted small me-2">Salut, {{ user.username }}</span>
-                        <a class="btn btn-outline-light btn-sm" href="{% url 'logout' %}">Déconnexion</a>
+                        <form action="{% url 'logout' %}" method="POST" class="m-0 p-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-light btn-sm">Déconnexion</button>
+                        </form>
                     </li>
                     {% else %}
                     <li class="nav-item ms-3">
