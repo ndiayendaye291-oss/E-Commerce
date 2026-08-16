@@ -6,3 +6,6 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = CustomUser
         fields = ('username', 'email', 'phone_number', 'address')
+        widgets = {
+            'address': forms.Textarea(attrs={'rows': 3}),
+        }
