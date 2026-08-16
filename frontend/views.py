@@ -2,16 +2,28 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 from django.contrib import messages
+from django.db.models import Q
 from catalog.models import Product, Category
 from cart.models import Cart, CartItem
-from .forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm, ProductForm
 
 def index(request):
+    query = request.GET.get('q', '')
+    category_id = request.GET.get('category', '')
+    
     products = Product.objects.all()
     categories = Category.objects.all()
+    
+    if query:
+        products = products.filter(Q(name__icontains=query) | Q(description__icontains=query))
+    if category_id:
+        products = products.filter(category_id=category_id)
+        
     context = {
         'products': products,
         'categories': categories,
+        'query': query,
+        'selected_category': int(category_id) if category_id.isdigit() else None,
     }
     return render(request, 'frontend/index.html', context)
 
@@ -113,10 +125,32 @@ def dashboard(request):
         from delivery.models import Delivery
         deliveries = Delivery.objects.filter(delivery_person=user)
         return render(request, 'frontend/dashboard_delivery.html', {'deliveries': deliveries})
+    elif user.role in ['SELLER', 'ADMIN']:
+        products = Product.objects.filter(seller=user) if user.role == 'SELLER' else Product.objects.all()
+        return render(request, 'frontend/dashboard_seller.html', {'products': products})
     else:
         from orders.models import Order
         orders = Order.objects.filter(user=user).order_by('-created_at')
         return render(request, 'frontend/dashboard_client.html', {'orders': orders})
+
+@login_required
+def add_product(request):
+    if request.user.role not in ['SELLER', 'ADMIN'] and not request.user.is_staff:
+        messages.error(request, "Accès réservé aux vendeurs et administrateurs.")
+        return redirect('index')
+        
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            product = form.save(commit=False)
+            product.seller = request.user
+            product.save()
+            messages.success(request, f"Le produit '{product.name}' a été publié avec succès !")
+            return redirect('dashboard')
+    else:
+        form = ProductForm()
+        
+    return render(request, 'frontend/add_product.html', {'form': form})
 
 @login_required
 def complete_delivery(request, delivery_id):
