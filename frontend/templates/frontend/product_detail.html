@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container fade-in-up">
     <a href="{% url 'index' %}" class="btn btn-outline-secondary mb-4">
-        &larr; Retour au catalogue
+        &larr; {% if is_en %}Back to catalog{% else %}Retour au catalogue{% endif %}
     </a>
 
     <div class="card p-5">
@@ -13,7 +13,7 @@
                     <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid rounded-4 shadow" style="max-height: 450px; width: 100%; object-fit: cover;">
                 {% else %}
                     <div class="d-flex align-items-center justify-content-center bg-secondary bg-opacity-25 rounded-4" style="height: 350px;">
-                        <span class="text-muted fs-5">Aucune image disponible</span>
+                        <span class="text-muted fs-5">{% if is_en %}No image available{% else %}Aucune image disponible{% endif %}</span>
                     </div>
                 {% endif %}
             </div>
@@ -23,28 +23,28 @@
                 <h1 class="display-5 fw-bold mb-3">{{ product.name }}</h1>
                 
                 {% if product.seller %}
-                    <p class="text-muted small mb-3">Vendu par <strong class="text-white">{{ product.seller.username }}</strong></p>
+                    <p class="text-muted small mb-3">{% if is_en %}Sold by{% else %}Vendu par{% endif %} <strong class="text-white">{{ product.seller.username }}</strong></p>
                 {% endif %}
 
                 <h2 class="text-success fw-bold mb-4 display-6">{{ product.price }} CFA</h2>
 
                 <div class="mb-4">
-                    <h5 class="fw-bold text-light mb-2">Description du produit :</h5>
+                    <h5 class="fw-bold text-light mb-2">{% if is_en %}Product Description:{% else %}Description du produit :{% endif %}</h5>
                     <p class="text-muted leading-relaxed">{{ product.description }}</p>
                 </div>
 
                 <div class="mb-4">
                     {% if product.stock > 0 %}
-                        <span class="badge bg-success px-3 py-2 fs-6">📦 En Stock ({{ product.stock }} disponibles)</span>
+                        <span class="badge bg-success px-3 py-2 fs-6">📦 {% if is_en %}In Stock{% else %}En Stock{% endif %} ({{ product.stock }} {% if is_en %}available{% else %}disponibles{% endif %})</span>
                     {% else %}
-                        <span class="badge bg-danger px-3 py-2 fs-6">❌ Rupture de Stock</span>
+                        <span class="badge bg-danger px-3 py-2 fs-6">❌ {% if is_en %}Out of Stock{% else %}Rupture de Stock{% endif %}</span>
                     {% endif %}
                 </div>
 
                 <form action="{% url 'add_to_cart' product.id %}" method="POST" class="d-flex gap-3">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-primary btn-lg px-5 py-3 rounded-pill {% if product.stock <= 0 %}disabled{% endif %}">
-                        🛒 Ajouter au Panier
+                        🛒 {% if is_en %}Add to Cart{% else %}Ajouter au Panier{% endif %}
                     </button>
                 </form>
             </div>

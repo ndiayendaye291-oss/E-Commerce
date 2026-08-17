@@ -420,7 +420,15 @@ def pos_checkout(request):
         
     return render(request, 'frontend/pos.html', {'products': products})
 
+from django.conf import settings
+from django.utils import translation
+
 def change_language(request, lang_code):
     if lang_code in ['fr', 'en']:
+        translation.activate(lang_code)
+        request.session['django_language'] = lang_code
         request.session['site_lang'] = lang_code
+        response = redirect(request.META.get('HTTP_REFERER', '/'))
+        response.set_cookie(settings.LANGUAGE_COOKIE_NAME, lang_code)
+        return response
     return redirect(request.META.get('HTTP_REFERER', '/'))

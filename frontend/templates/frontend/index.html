@@ -3,17 +3,21 @@
 {% block content %}
 <div class="text-center mb-5 fade-in-up">
     <div class="py-4">
-        <h1 class="display-3 fw-bold mb-3" style="letter-spacing: -2px;">La technologie de demain, <br><span style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">aujourd'hui.</span></h1>
-        <p class="lead text-muted mb-4 mx-auto" style="max-width: 600px;">Découvrez notre collection exclusive de produits mis en ligne par nos vendeurs certifiés.</p>
+        <h1 class="display-3 fw-bold mb-3" style="letter-spacing: -2px;">
+            {% if is_en %}Tomorrow's Technology, <br><span style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Today.</span>{% else %}La technologie de demain, <br><span style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">aujourd'hui.</span>{% endif %}
+        </h1>
+        <p class="lead text-muted mb-4 mx-auto" style="max-width: 600px;">
+            {% if is_en %}Discover our exclusive collection of products listed by verified sellers.{% else %}Découvrez notre collection exclusive de produits mis en ligne par nos vendeurs certifiés.{% endif %}
+        </p>
         
         <!-- Search Bar -->
         <div class="row justify-content-center mt-4">
             <div class="col-md-7 col-lg-6">
                 <form action="{% url 'index' %}" method="GET" class="d-flex gap-2">
-                    <input type="text" name="q" value="{{ query }}" placeholder="🔎 Rechercher un produit (ex: iPhone, Ecouteurs...)" class="form-control m-0">
-                    <button type="submit" class="btn btn-primary px-4">Chercher</button>
+                    <input type="text" name="q" value="{{ query }}" placeholder="{% if is_en %}🔎 Search for a product (e.g. iPhone, Earbuds...){% else %}🔎 Rechercher un produit (ex: iPhone, Ecouteurs...){% endif %}" class="form-control m-0">
+                    <button type="submit" class="btn btn-primary px-4">{% if is_en %}Search{% else %}Chercher{% endif %}</button>
                     {% if query or selected_category %}
-                        <a href="{% url 'index' %}" class="btn btn-outline-secondary d-flex align-items-center">Réinitialiser</a>
+                        <a href="{% url 'index' %}" class="btn btn-outline-secondary d-flex align-items-center">{% if is_en %}Reset{% else %}Réinitialiser{% endif %}</a>
                     {% endif %}
                 </form>
             </div>
@@ -22,7 +26,7 @@
         <!-- Category Filters -->
         <div class="d-flex justify-content-center flex-wrap gap-2 mt-4">
             <a href="{% url 'index' %}" class="btn btn-sm rounded-pill px-3 {% if not selected_category %}btn-warning{% else %}btn-outline-light{% endif %}">
-                Toutes les catégories
+                {% if is_en %}All categories{% else %}Toutes les catégories{% endif %}
             </a>
             {% for cat in categories %}
             <a href="{% url 'index' %}?category={{ cat.id }}{% if query %}&q={{ query }}{% endif %}" class="btn btn-sm rounded-pill px-3 {% if selected_category == cat.id %}btn-warning{% else %}btn-outline-light{% endif %}">
@@ -55,7 +59,7 @@
                     <span class="fs-5 fw-bold">{{ product.price }} CFA</span>
                     <form action="{% url 'add_to_cart' product.id %}" method="POST">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4">Ajouter</button>
+                        <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4">{% if is_en %}Add{% else %}Ajouter{% endif %}</button>
                     </form>
                 </div>
             </div>

@@ -2,20 +2,22 @@
 
 {% block content %}
 <div class="card p-5 fade-in-up">
-    <h3 class="mb-4 fw-bold" style="letter-spacing: -1px;">Mon Tableau de Bord (Client)</h3>
-    <h5 class="mb-3 text-warning">Historique des commandes</h5>
+    <h3 class="mb-4 fw-bold" style="letter-spacing: -1px;">
+        {% if is_en %}My Client Dashboard{% else %}Mon Tableau de Bord (Client){% endif %}
+    </h3>
+    <h5 class="mb-3 text-warning">{% if is_en %}Order History{% else %}Historique des commandes{% endif %}</h5>
     
     {% if orders %}
         <div class="table-responsive">
             <table class="table table-dark table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>N° Commande</th>
-                        <th>Date</th>
-                        <th>Adresse de livraison</th>
-                        <th>Statut</th>
-                        <th>Total</th>
-                        <th>Livraison</th>
+                        <th>{% if is_en %}Order #{% else %}N° Commande{% endif %}</th>
+                        <th>{% if is_en %}Date{% else %}Date{% endif %}</th>
+                        <th>{% if is_en %}Shipping Address{% else %}Adresse de livraison{% endif %}</th>
+                        <th>{% if is_en %}Status{% else %}Statut{% endif %}</th>
+                        <th>{% if is_en %}Total{% else %}Total{% endif %}</th>
+                        <th>{% if is_en %}Delivery{% else %}Livraison{% endif %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -48,25 +50,25 @@
 
     <!-- Demande de Partenariat -->
     <div class="mt-5 pt-4 border-top border-secondary">
-        <h4 class="fw-bold mb-3 text-warning">💼 Devenir Partenaire ISEPAT</h4>
+        <h4 class="fw-bold mb-3 text-warning">💼 {% if is_en %}Become an ISEPAT Partner{% else %}Devenir Partenaire ISEPAT{% endif %}</h4>
         <div class="p-4 rounded-3" style="background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color);">
             {% if user.role_request_rejected %}
                 <div class="alert alert-danger m-0 mb-3">
-                    ❌ <strong>Information Candidature :</strong> Votre demande de partenariat a été examinée par l'administration. Elle n'a pas été retenue pour le moment. Votre compte reste pleinement fonctionnel en tant que <strong>Client</strong>.
+                    ❌ <strong>{% if is_en %}Application Status:{% else %}Information Candidature :{% endif %}</strong> {% if is_en %}Your partnership request was reviewed. It was not accepted at this time. Your account remains fully functional as a Client.{% else %}Votre demande de partenariat a été examinée par l'administration. Elle n'a pas été retenue pour le moment. Votre compte reste pleinement fonctionnel en tant que Client.{% endif %}
                 </div>
             {% endif %}
             {% if user.role_request %}
                 <div class="alert alert-warning m-0">
-                    ⏳ <strong>Demande en cours :</strong> Votre candidature pour devenir <strong>{{ user.get_role_request_display }}</strong> a été transmise à l'administrateur et est en cours d'examen.
+                    ⏳ <strong>{% if is_en %}Request Pending:{% else %}Demande en cours :{% endif %}</strong> {% if is_en %}Your application to become a {{ user.get_role_request_display }} has been submitted to the admin for review.{% else %}Votre candidature pour devenir {{ user.get_role_request_display }} a été transmise à l'administrateur et est en cours d'examen.{% endif %}
                 </div>
             {% else %}
-                <p class="text-muted mb-3">Vous souhaitez vendre vos propres produits ou devenir livreur partenaire sur notre plateforme ?</p>
+                <p class="text-muted mb-3">{% if is_en %}Do you want to sell your own products or become a delivery partner on our platform?{% else %}Vous souhaitez vendre vos propres produits ou devenir livreur partenaire sur notre plateforme ?{% endif %}</p>
                 <div class="d-flex gap-3">
                     <a href="{% url 'request_role' 'SELLER' %}" class="btn btn-outline-warning btn-sm px-4">
-                        🏪 Demander un compte Vendeur
+                        🏪 {% if is_en %}Apply for Seller Account{% else %}Demander un compte Vendeur{% endif %}
                     </a>
                     <a href="{% url 'request_role' 'DELIVERY' %}" class="btn btn-outline-info btn-sm px-4">
-                        🛵 Demander un compte Livreur
+                        🛵 {% if is_en %}Apply for Deliverer Account{% else %}Demander un compte Livreur{% endif %}
                     </a>
                 </div>
             {% endif %}
