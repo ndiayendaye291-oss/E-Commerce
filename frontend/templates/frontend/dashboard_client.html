@@ -50,6 +50,11 @@
     <div class="mt-5 pt-4 border-top border-secondary">
         <h4 class="fw-bold mb-3 text-warning">💼 Devenir Partenaire ISEPAT</h4>
         <div class="p-4 rounded-3" style="background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color);">
+            {% if user.role_request_rejected %}
+                <div class="alert alert-danger m-0 mb-3">
+                    ❌ <strong>Information Candidature :</strong> Votre demande de partenariat a été examinée par l'administration. Elle n'a pas été retenue pour le moment. Votre compte reste pleinement fonctionnel en tant que <strong>Client</strong>.
+                </div>
+            {% endif %}
             {% if user.role_request %}
                 <div class="alert alert-warning m-0">
                     ⏳ <strong>Demande en cours :</strong> Votre candidature pour devenir <strong>{{ user.get_role_request_display }}</strong> a été transmise à l'administrateur et est en cours d'examen.

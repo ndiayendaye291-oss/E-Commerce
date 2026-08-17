@@ -8,6 +8,9 @@
             <p class="text-muted small m-0">Gérez les produits, les commandes, les candidats et suivez la comptabilité globale.</p>
         </div>
         <div class="d-flex gap-2">
+            <a href="{% url 'pos_checkout' %}" class="btn btn-success">
+                🏪 Vente Magasin (POS)
+            </a>
             {% if user.role == 'ADMIN' or user.is_superuser %}
             <a href="{% url 'create_admin' %}" class="btn btn-outline-warning">
                 👨💼 + Créer un Administrateur
@@ -295,4 +298,81 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Banner de Notification Flottante pour Nouvelles Commandes -->
+<div id="liveOrderAlert" class="position-fixed bottom-0 end-0 p-4" style="z-index: 9999; display: none;">
+    <div class="alert alert-warning shadow-lg border-warning d-flex align-items-center p-3 rounded-4 fade-in-up" style="background: rgba(255, 138, 0, 0.95); color: #000;">
+        <span class="fs-2 me-3">🔔</span>
+        <div>
+            <h6 class="fw-bold mb-1" id="alertTitle">Nouvelle Commande Reçue !</h6>
+            <small id="alertBody" class="fw-medium">Une nouvelle commande vient d'être passée sur le site.</small>
+        </div>
+        <button type="button" class="btn-close ms-3" onclick="document.getElementById('liveOrderAlert').style.display='none'"></button>
+    </div>
+</div>
+
+<!-- Script de Détection & Notification Sonore (Web Audio API) -->
+<script>
+    let lastOrderCount = null;
+
+    // Fonction pour synthétiser un son de carillon / caisse enregistreuse
+    function playOrderChime() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Note 1 (Mi / E5)
+            const osc1 = audioCtx.createOscillator();
+            const gain1 = audioCtx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(659.25, audioCtx.currentTime);
+            gain1.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+            osc1.connect(gain1);
+            gain1.connect(audioCtx.destination);
+            osc1.start();
+            osc1.stop(audioCtx.currentTime + 0.5);
+
+            // Note 2 (La / A5)
+            setTimeout(() => {
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(880, audioCtx.currentTime);
+                gain2.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+                osc2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+                osc2.start();
+                osc2.stop(audioCtx.currentTime + 0.8);
+            }, 150);
+        } catch (e) {
+            console.log("Audio notification block active", e);
+        }
+    }
+
+    // Polling toutes les 8 secondes
+    function checkLiveOrders() {
+        fetch('{% url "api_check_orders" %}')
+            .then(res => res.json())
+            .then(data => {
+                if (data.count !== undefined) {
+                    if (lastOrderCount !== null && data.count > lastOrderCount) {
+                        // Jouer le son et afficher l'alerte
+                        playOrderChime();
+                        
+                        const alertBox = document.getElementById('liveOrderAlert');
+                        document.getElementById('alertTitle').innerText = `🔔 Nouvelle Commande #${data.latest_id} !`;
+                        document.getElementById('alertBody').innerText = `Client: ${data.latest_user} — Montant: ${data.latest_amount} CFA`;
+                        alertBox.style.display = 'block';
+                    }
+                    lastOrderCount = data.count;
+                }
+            })
+            .catch(err => console.error("Error polling orders:", err));
+    }
+
+    // Démarrer la surveillance
+    setInterval(checkLiveOrders, 8000);
+    checkLiveOrders();
+</script>
 {% endblock %}

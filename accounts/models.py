@@ -10,6 +10,7 @@ class CustomUser(AbstractUser):
     )
     role = models.CharField(max_length=15, choices=ROLE_CHOICES, default='CLIENT')
     role_request = models.CharField(max_length=15, choices=ROLE_CHOICES, blank=True, null=True)
+    role_request_rejected = models.BooleanField(default=False)
     is_approved = models.BooleanField(default=True, help_text="Permet aux Vendeurs/Livreurs d'accéder à leurs espaces.")
     
     # Granular Permissions for Secondary Admins

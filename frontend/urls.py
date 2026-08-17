@@ -19,4 +19,6 @@ urlpatterns = [
     path('request-role/<str:role>/', views.request_role, name='request_role'),
     path('approve-role/<int:user_id>/<str:action>/', views.approve_role, name='approve_role'),
     path('create-admin/', views.create_admin, name='create_admin'),
+    path('pos/', views.pos_checkout, name='pos_checkout'),
+    path('api/check-orders/', views.api_check_orders, name='api_check_orders'),
 ]

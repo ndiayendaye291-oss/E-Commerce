@@ -280,6 +280,7 @@ def request_role(request, role):
         
     user = request.user
     user.role_request = role
+    user.role_request_rejected = False
     user.save()
     messages.success(request, f"Votre demande pour devenir {user.get_role_request_display()} a été envoyée à l'administrateur !")
     return redirect('dashboard')
@@ -298,10 +299,12 @@ def approve_role(request, user_id, action):
             target_user.role = target_user.role_request
             target_user.role_request = None
         target_user.is_approved = True
+        target_user.role_request_rejected = False
         target_user.save()
         messages.success(request, f"La demande de {target_user.username} a été approuvée avec succès ! Il est désormais {target_user.get_role_display()}.")
     elif action == 'reject':
         target_user.role_request = None
+        target_user.role_request_rejected = True
         target_user.save()
         messages.info(request, f"La demande de {target_user.username} a été refusée.")
         
@@ -328,3 +331,91 @@ def create_admin(request):
         form = AdminCreationForm()
         
     return render(request, 'frontend/create_admin.html', {'form': form})
+
+from django.http import JsonResponse
+
+@login_required
+def api_check_orders(request):
+    if request.user.role not in ['SELLER', 'ADMIN'] and not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+        
+    from orders.models import Order
+    latest_order = Order.objects.order_by('-created_at').first()
+    count = Order.objects.count()
+    
+    return JsonResponse({
+        'count': count,
+        'latest_id': latest_order.id if latest_order else 0,
+        'latest_user': latest_order.user.username if latest_order else '',
+        'latest_amount': str(latest_order.total_amount) if latest_order else '0',
+    })
+
+@login_required
+def pos_checkout(request):
+    if request.user.role not in ['SELLER', 'ADMIN'] and not request.user.is_staff:
+        messages.error(request, "Accès réservé aux vendeurs et administrateurs.")
+        return redirect('index')
+        
+    products = Product.objects.filter(stock__gt=0)
+    
+    if request.method == 'POST':
+        product_id = request.POST.get('product_id')
+        quantity = int(request.POST.get('quantity', 1))
+        payment_method = request.POST.get('payment_method', 'CASH')
+        client_name = request.POST.get('client_name', 'Client Magasin')
+        
+        product = get_object_or_404(Product, id=product_id)
+        
+        if quantity > product.stock:
+            messages.error(request, f"Stock insuffisant ({product.stock} disponibles).")
+            return redirect('pos_checkout')
+            
+        from orders.models import Order, OrderItem, Payment, Transaction
+        from decimal import Decimal
+        
+        # Create In-Store Order
+        total = Decimal(str(product.price)) * Decimal(str(quantity))
+        order = Order.objects.create(
+            user=request.user,
+            status='DELIVERED',
+            shipping_address=f"Vente Directe en Magasin - Client: {client_name}",
+            total_amount=total
+        )
+        
+        OrderItem.objects.create(
+            order=order,
+            product=product,
+            quantity=quantity,
+            unit_price=product.price
+        )
+        
+        # Reduce Stock
+        product.stock -= quantity
+        product.save()
+        
+        # Create Payment
+        Payment.objects.create(
+            order=order,
+            amount=total,
+            method=payment_method,
+            is_successful=True
+        )
+        
+        # Financial Transaction Journal Entry (10% commission, 90% seller)
+        commission = total * Decimal('0.10')
+        seller_share = total * Decimal('0.90')
+        
+        Transaction.objects.create(
+            transaction_id=f"POS-{order.id:06d}",
+            order=order,
+            total_amount=total,
+            payment_method=payment_method,
+            platform_commission=commission,
+            seller_amount=seller_share,
+            delivery_fee=Decimal('0.00')
+        )
+        
+        messages.success(request, f"Vente en magasin enregistrée avec succès ! Commande #{order.id} ({total} CFA).")
+        return redirect('order_success', order_id=order.id)
+        
+    return render(request, 'frontend/pos.html', {'products': products})

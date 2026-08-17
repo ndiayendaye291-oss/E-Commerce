@@ -1,0 +1,55 @@
+{% extends 'frontend/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center fade-in-up">
+    <div class="col-md-8 col-lg-6">
+        <div class="card p-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold mb-0" style="letter-spacing: -1px;">🏪 Vente en Magasin (POS)</h3>
+                <span class="badge bg-success">Comptoir Direct</span>
+            </div>
+            <p class="text-muted small mb-4">Enregistrez directement une vente effectuée au comptoir pour un client présent sur place.</p>
+
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label class="form-label text-light">Sélectionner le Produit</label>
+                    <select name="product_id" class="form-select" required>
+                        <option value="">-- Choisir un produit en stock --</option>
+                        {% for product in products %}
+                            <option value="{{ product.id }}">
+                                {{ product.name }} — {{ product.price }} CFA (Stock: {{ product.stock }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label text-light">Quantité</label>
+                    <input type="number" name="quantity" value="1" min="1" class="form-control" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label text-light">Nom du Client (Optionnel)</label>
+                    <input type="text" name="client_name" placeholder="Ex: Client Comptoir / M. Ndiaye" class="form-control">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label text-light">Mode de Paiement Reçu</label>
+                    <select name="payment_method" class="form-select">
+                        <option value="CASH">💵 Espèces (Comptoir)</option>
+                        <option value="MOBILE">📱 Mobile Money (Wave / Orange Money)</option>
+                        <option value="CARD">💳 Carte Bancaire</option>
+                    </select>
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary w-50 py-3">Annuler</a>
+                    <button type="submit" class="btn btn-success w-50 py-3 fw-bold">✓ Enregistrer la Vente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
