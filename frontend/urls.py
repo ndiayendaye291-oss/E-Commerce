@@ -21,4 +21,5 @@ urlpatterns = [
     path('create-admin/', views.create_admin, name='create_admin'),
     path('pos/', views.pos_checkout, name='pos_checkout'),
     path('api/check-orders/', views.api_check_orders, name='api_check_orders'),
+    path('change-language/<str:lang_code>/', views.change_language, name='change_language'),
 ]

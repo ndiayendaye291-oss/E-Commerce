@@ -419,3 +419,8 @@ def pos_checkout(request):
         return redirect('order_success', order_id=order.id)
         
     return render(request, 'frontend/pos.html', {'products': products})
+
+def change_language(request, lang_code):
+    if lang_code in ['fr', 'en']:
+        request.session['site_lang'] = lang_code
+    return redirect(request.META.get('HTTP_REFERER', '/'))
