@@ -47,3 +47,16 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Paiement pour Commande #{self.order.id}"
+
+class Transaction(models.Model):
+    transaction_id = models.CharField(max_length=50, unique=True)
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='transaction')
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_method = models.CharField(max_length=20)
+    platform_commission = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    seller_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=1500.00)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"TXN {self.transaction_id} - Commande #{self.order.id} ({self.total_amount} CFA)"

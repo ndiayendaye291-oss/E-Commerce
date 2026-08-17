@@ -10,6 +10,15 @@ class CustomUser(AbstractUser):
     )
     role = models.CharField(max_length=15, choices=ROLE_CHOICES, default='CLIENT')
     role_request = models.CharField(max_length=15, choices=ROLE_CHOICES, blank=True, null=True)
+    is_approved = models.BooleanField(default=True, help_text="Permet aux Vendeurs/Livreurs d'accéder à leurs espaces.")
+    
+    # Granular Permissions for Secondary Admins
+    can_manage_orders = models.BooleanField(default=True)
+    can_manage_payments = models.BooleanField(default=True)
+    can_manage_sellers = models.BooleanField(default=True)
+    can_manage_deliverers = models.BooleanField(default=True)
+    can_view_analytics = models.BooleanField(default=True)
+
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
 

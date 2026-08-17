@@ -35,10 +35,18 @@ def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, "Inscription réussie !")
-            return redirect('index')
+            user = form.save(commit=False)
+            if user.role in ['SELLER', 'DELIVERY']:
+                user.is_approved = False
+                user.save()
+                messages.warning(request, f"Votre compte {user.get_role_display()} a été créé avec succès ! Il est en attente d'approbation par le Super Admin.")
+                return redirect('login')
+            else:
+                user.is_approved = True
+                user.save()
+                login(request, user)
+                messages.success(request, "Inscription réussie !")
+                return redirect('index')
     else:
         form = CustomUserCreationForm()
     return render(request, 'frontend/register.html', {'form': form})
@@ -110,7 +118,24 @@ def checkout(request):
             is_successful=True if payment_method == 'CASH' else False
         )
         
-        # Create Delivery (if applicable, let's create a pending delivery)
+        # Create Financial Transaction Journal Entry (10% commission, 90% seller)
+        from orders.models import Transaction
+        from decimal import Decimal
+        total = Decimal(str(order.total_amount))
+        commission = total * Decimal('0.10')
+        seller_share = total * Decimal('0.90')
+        
+        Transaction.objects.create(
+            transaction_id=f"TXN-{order.id:06d}",
+            order=order,
+            total_amount=total,
+            payment_method=payment_method,
+            platform_commission=commission,
+            seller_amount=seller_share,
+            delivery_fee=Decimal('1500.00')
+        )
+        
+        # Create Delivery
         from delivery.models import Delivery
         Delivery.objects.create(order=order)
         
@@ -136,17 +161,42 @@ def dashboard(request):
         deliveries = Delivery.objects.filter(delivery_person=user)
         return render(request, 'frontend/dashboard_delivery.html', {'deliveries': deliveries})
     elif user.role in ['SELLER', 'ADMIN']:
-        from orders.models import Order
+        from orders.models import Order, Transaction
         from accounts.models import CustomUser
+        from django.db.models import Sum
+        
         products = Product.objects.filter(seller=user) if user.role == 'SELLER' else Product.objects.all()
         orders = Order.objects.all().order_by('-created_at')
         deliverers = CustomUser.objects.filter(role='DELIVERY')
         role_requests = CustomUser.objects.filter(role_request__isnull=False).exclude(role_request='')
+        pending_users = CustomUser.objects.filter(is_approved=False)
+        
+        # Financial Metrics for Admin
+        total_revenue = Transaction.objects.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+        total_commission = Transaction.objects.aggregate(Sum('platform_commission'))['platform_commission__sum'] or 0
+        total_seller_payout = Transaction.objects.aggregate(Sum('seller_amount'))['seller_amount__sum'] or 0
+        total_delivery_fees = Transaction.objects.aggregate(Sum('delivery_fee'))['delivery_fee__sum'] or 0
+        
+        cash_total = Transaction.objects.filter(payment_method='CASH').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+        mobile_total = Transaction.objects.filter(payment_method='MOBILE').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+        card_total = Transaction.objects.filter(payment_method='CARD').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+        
+        recent_transactions = Transaction.objects.all().order_by('-created_at')[:10]
+        
         return render(request, 'frontend/dashboard_seller.html', {
             'products': products, 
             'orders': orders, 
             'deliverers': deliverers,
-            'role_requests': role_requests
+            'role_requests': role_requests,
+            'pending_users': pending_users,
+            'total_revenue': total_revenue,
+            'total_commission': total_commission,
+            'total_seller_payout': total_seller_payout,
+            'total_delivery_fees': total_delivery_fees,
+            'cash_total': cash_total,
+            'mobile_total': mobile_total,
+            'card_total': card_total,
+            'recent_transactions': recent_transactions,
         })
     else:
         from orders.models import Order
@@ -243,14 +293,38 @@ def approve_role(request, user_id, action):
     from accounts.models import CustomUser
     target_user = get_object_or_404(CustomUser, id=user_id)
     
-    if action == 'approve' and target_user.role_request:
-        target_user.role = target_user.role_request
-        target_user.role_request = None
+    if action == 'approve':
+        if target_user.role_request:
+            target_user.role = target_user.role_request
+            target_user.role_request = None
+        target_user.is_approved = True
         target_user.save()
-        messages.success(request, f"La demande de {target_user.username} a été approuvée avec succès ! Il est maintenant {target_user.get_role_display()}.")
+        messages.success(request, f"La demande de {target_user.username} a été approuvée avec succès ! Il est désormais {target_user.get_role_display()}.")
     elif action == 'reject':
         target_user.role_request = None
         target_user.save()
         messages.info(request, f"La demande de {target_user.username} a été refusée.")
         
     return redirect('dashboard')
+
+@login_required
+def create_admin(request):
+    if not request.user.is_superuser and request.user.role != 'ADMIN':
+        messages.error(request, "Seul le Super Admin peut créer de nouveaux Administrateurs.")
+        return redirect('dashboard')
+        
+    from .forms import AdminCreationForm
+    if request.method == 'POST':
+        form = AdminCreationForm(request.POST)
+        if form.is_valid():
+            new_admin = form.save(commit=False)
+            new_admin.role = 'ADMIN'
+            new_admin.is_approved = True
+            new_admin.is_staff = True
+            new_admin.save()
+            messages.success(request, f"L'administrateur '{new_admin.username}' a été créé avec les permissions personnalisées !")
+            return redirect('dashboard')
+    else:
+        form = AdminCreationForm()
+        
+    return render(request, 'frontend/create_admin.html', {'form': form})

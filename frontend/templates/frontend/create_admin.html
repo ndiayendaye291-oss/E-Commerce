@@ -1,0 +1,42 @@
+{% extends 'frontend/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center fade-in-up">
+    <div class="col-md-8 col-lg-6">
+        <div class="card p-5">
+            <h3 class="fw-bold text-center mb-2" style="letter-spacing: -1px;">👨💼 Créer un Administrateur</h3>
+            <p class="text-muted small text-center mb-4">Définissez les permissions granulaires de ce gestionnaire de plateforme.</p>
+
+            <form method="POST">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="mb-4 text-start">
+                    {% if field.field.widget.input_type == "checkbox" %}
+                        <div class="form-check form-switch fs-5">
+                            {{ field }}
+                            <label class="form-check-label text-light ms-2 fs-6" for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                            </label>
+                        </div>
+                    {% else %}
+                        <label class="form-label text-light mb-2">{{ field.label }}</label>
+                        {{ field }}
+                    {% endif %}
+                    {% if field.help_text %}
+                        <div class="form-text text-muted small mt-1 lh-sm">{{ field.help_text|safe }}</div>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+                
+                <div class="d-flex gap-2 mt-4">
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary w-50 py-3">Annuler</a>
+                    <button type="submit" class="btn btn-primary w-50 py-3">Créer l'Admin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
