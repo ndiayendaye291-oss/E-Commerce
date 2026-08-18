@@ -34,8 +34,10 @@
                 </div>
 
                 <div class="mb-4">
-                    {% if product.stock > 0 %}
+                    {% if product.stock > 3 %}
                         <span class="badge bg-success px-3 py-2 fs-6">📦 {% if is_en %}In Stock{% else %}En Stock{% endif %} ({{ product.stock }} {% if is_en %}available{% else %}disponibles{% endif %})</span>
+                    {% elif product.stock > 0 %}
+                        <span class="badge bg-warning text-dark px-3 py-2 fs-6">⚠️ {% if is_en %}Only {{ product.stock }} left in stock!{% else %}Plus que {{ product.stock }} en stock !{% endif %}</span>
                     {% else %}
                         <span class="badge bg-danger px-3 py-2 fs-6">❌ {% if is_en %}Out of Stock{% else %}Rupture de Stock{% endif %}</span>
                     {% endif %}

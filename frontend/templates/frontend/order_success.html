@@ -25,11 +25,36 @@
                 <p class="mb-0"><strong class="text-muted">Méthode :</strong> Paiement à la livraison</p>
             </div>
 
-            <div class="d-flex gap-2">
-                <a href="{% url 'index' %}" class="btn btn-outline-light w-50 py-3">Continuer mes achats</a>
-                <a href="{% url 'dashboard' %}" class="btn btn-primary w-50 py-3">Suivre ma commande</a>
+            <div class="d-flex gap-2 d-print-none">
+                <button onclick="window.print()" class="btn btn-outline-warning w-50 py-3">
+                    🖨️ {% if is_en %}Print Receipt (PDF){% else %}Imprimer le Reçu (PDF){% endif %}
+                </button>
+                <a href="{% url 'dashboard' %}" class="btn btn-primary w-50 py-3">
+                    {% if is_en %}Track My Order{% else %}Suivre ma commande{% endif %}
+                </a>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+@media print {
+    nav, footer, .d-print-none, .btn {
+        display: none !important;
+    }
+    body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+    .card {
+        border: 1px solid #000 !important;
+        background: #fff !important;
+        color: #000 !important;
+        box-shadow: none !important;
+    }
+    .text-white, .text-warning, .text-success, .text-muted {
+        color: #000 !important;
+    }
+}
+</style>
 {% endblock %}
