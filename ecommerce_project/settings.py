@@ -90,24 +90,27 @@ WSGI_APPLICATION = 'ecommerce_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+import os
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'ecommerce_db'),
+        'USER': os.getenv('DB_USER', 'pffadmin'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'pff@12345'),
+        'HOST': os.getenv('DB_HOST', '127.0.0.1'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
-# Configuration PostgreSQL (à décommenter et configurer lorsque PostgreSQL est prêt)
+# Configuration SQLite de secours (si nécessaire pour les tests locaux sans PostgreSQL)
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'ecommerce_db',
-#         'USER': 'postgres',
-#         'PASSWORD': 'password',
-#         'HOST': '127.0.0.1',
-#         'PORT': '5432',
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
+
 
 # Définition du modèle utilisateur personnalisé
 AUTH_USER_MODEL = 'accounts.CustomUser'

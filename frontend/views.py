@@ -432,3 +432,144 @@ def change_language(request, lang_code):
         response.set_cookie(settings.LANGUAGE_COOKIE_NAME, lang_code)
         return response
     return redirect(request.META.get('HTTP_REFERER', '/'))
+
+# ==========================================
+# SUPERADMIN CONTROL CENTER VIEWS
+# ==========================================
+
+@login_required
+def superadmin_dashboard(request):
+    if not request.user.is_superuser and request.user.role != 'ADMIN':
+        messages.error(request, "Accès réservé au Superadmin et Administrateurs.")
+        return redirect('index')
+        
+    if getattr(request.user, 'is_blocked', False):
+        messages.error(request, "Votre compte a été suspendu par la direction.")
+        return redirect('index')
+        
+    from accounts.models import CustomUser
+    from orders.models import Order, Transaction
+    from delivery.models import Delivery
+    from django.db.models import Sum, Count
+    
+    user_search = request.GET.get('user_q', '')
+    role_filter = request.GET.get('role_filter', '')
+    
+    all_users = CustomUser.objects.all().order_by('-date_joined')
+    if user_search:
+        all_users = all_users.filter(Q(username__icontains=user_search) | Q(email__icontains=user_search) | Q(phone_number__icontains=user_search))
+    if role_filter:
+        all_users = all_users.filter(role=role_filter)
+        
+    total_users = CustomUser.objects.count()
+    clients_count = CustomUser.objects.filter(role='CLIENT').count()
+    sellers_count = CustomUser.objects.filter(role='SELLER').count()
+    deliverers_count = CustomUser.objects.filter(role='DELIVERY').count()
+    admins_count = CustomUser.objects.filter(role='ADMIN').count()
+    blocked_count = CustomUser.objects.filter(is_blocked=True).count()
+    
+    total_revenue = Transaction.objects.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    total_commission = Transaction.objects.aggregate(Sum('platform_commission'))['platform_commission__sum'] or 0
+    total_seller_payout = Transaction.objects.aggregate(Sum('seller_amount'))['seller_amount__sum'] or 0
+    total_delivery_fees = Transaction.objects.aggregate(Sum('delivery_fee'))['delivery_fee__sum'] or 0
+    
+    order_status_filter = request.GET.get('order_status', '')
+    orders = Order.objects.all().order_by('-created_at')
+    if order_status_filter:
+        orders = orders.filter(status=order_status_filter)
+        
+    deliverers = CustomUser.objects.filter(role='DELIVERY', is_approved=True, is_blocked=False)
+    products = Product.objects.all().order_by('-created_at')
+    transactions = Transaction.objects.all().order_by('-created_at')[:20]
+
+    context = {
+        'all_users': all_users,
+        'user_search': user_search,
+        'role_filter': role_filter,
+        'total_users': total_users,
+        'clients_count': clients_count,
+        'sellers_count': sellers_count,
+        'deliverers_count': deliverers_count,
+        'admins_count': admins_count,
+        'blocked_count': blocked_count,
+        
+        'total_revenue': total_revenue,
+        'total_commission': total_commission,
+        'total_seller_payout': total_seller_payout,
+        'total_delivery_fees': total_delivery_fees,
+        
+        'orders': orders,
+        'order_status_filter': order_status_filter,
+        'deliverers': deliverers,
+        'products': products,
+        'transactions': transactions,
+    }
+    return render(request, 'frontend/superadmin_dashboard.html', context)
+
+@login_required
+def superadmin_toggle_block_user(request, user_id):
+    if not request.user.is_superuser and request.user.role != 'ADMIN':
+        messages.error(request, "Accès réservé au Superadmin.")
+        return redirect('index')
+        
+    from accounts.models import CustomUser
+    target_user = get_object_or_404(CustomUser, id=user_id)
+    
+    if target_user.id == request.user.id:
+        messages.error(request, "Vous ne pouvez pas suspendre votre propre compte !")
+        return redirect('superadmin_dashboard')
+        
+    target_user.is_blocked = not target_user.is_blocked
+    target_user.save()
+    
+    status_str = "suspendu" if target_user.is_blocked else "réactivé"
+    messages.success(request, f"Le compte de {target_user.username} a été {status_str} avec succès.")
+    return redirect('superadmin_dashboard')
+
+@login_required
+def superadmin_change_user_role(request, user_id):
+    if not request.user.is_superuser and request.user.role != 'ADMIN':
+        messages.error(request, "Accès réservé au Superadmin.")
+        return redirect('index')
+        
+    if request.method == 'POST':
+        new_role = request.POST.get('role')
+        if new_role in ['CLIENT', 'SELLER', 'ADMIN', 'DELIVERY']:
+            from accounts.models import CustomUser
+            target_user = get_object_or_404(CustomUser, id=user_id)
+            target_user.role = new_role
+            if new_role in ['SELLER', 'DELIVERY']:
+                target_user.is_approved = True
+            target_user.save()
+            messages.success(request, f"Le rôle de {target_user.username} a été changé en {target_user.get_role_display()}.")
+    return redirect('superadmin_dashboard')
+
+@login_required
+def superadmin_override_order_status(request, order_id):
+    if not request.user.is_superuser and request.user.role != 'ADMIN':
+        messages.error(request, "Accès réservé au Superadmin.")
+        return redirect('index')
+        
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        from orders.models import Order
+        order = get_object_or_404(Order, id=order_id)
+        order.status = new_status
+        order.save()
+        messages.success(request, f"Le statut de la commande #{order.id} a été modifié en '{order.get_status_display()}'.")
+    return redirect('superadmin_dashboard')
+
+@login_required
+def superadmin_toggle_product_status(request, product_id):
+    if not request.user.is_superuser and request.user.role != 'ADMIN':
+        messages.error(request, "Accès réservé au Superadmin.")
+        return redirect('index')
+        
+    product = get_object_or_404(Product, id=product_id)
+    product.is_active = not product.is_active
+    product.save()
+    
+    status_str = "activé" if product.is_active else "masqué / désactivé"
+    messages.success(request, f"Le produit '{product.name}' a été {status_str}.")
+    return redirect('superadmin_dashboard')
+

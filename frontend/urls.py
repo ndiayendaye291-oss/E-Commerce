@@ -22,4 +22,12 @@ urlpatterns = [
     path('pos/', views.pos_checkout, name='pos_checkout'),
     path('api/check-orders/', views.api_check_orders, name='api_check_orders'),
     path('change-language/<str:lang_code>/', views.change_language, name='change_language'),
+
+    # Superadmin Control Center URLs
+    path('superadmin/', views.superadmin_dashboard, name='superadmin_dashboard'),
+    path('superadmin/user/<int:user_id>/toggle-block/', views.superadmin_toggle_block_user, name='superadmin_toggle_block_user'),
+    path('superadmin/user/<int:user_id>/change-role/', views.superadmin_change_user_role, name='superadmin_change_user_role'),
+    path('superadmin/order/<int:order_id>/status/', views.superadmin_override_order_status, name='superadmin_override_order_status'),
+    path('superadmin/product/<int:product_id>/toggle-status/', views.superadmin_toggle_product_status, name='superadmin_toggle_product_status'),
 ]
+

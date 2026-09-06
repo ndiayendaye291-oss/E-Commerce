@@ -1,0 +1,373 @@
+{% extends 'frontend/base.html' %}
+
+{% block title %}Console de Supervision Superadmin | E-Commerce ISEPAT{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 fade-in-up">
+
+    <!-- En-tête de la Console Superadmin -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3 p-4 card shadow-lg border-0" style="background: linear-gradient(135deg, rgba(229, 46, 113, 0.15), rgba(255, 138, 0, 0.15)); border-radius: 20px;">
+        <div>
+            <span class="badge bg-danger text-uppercase px-3 py-2 rounded-pill shadow-sm mb-2">👑 Accès Superviseur / Master Admin</span>
+            <h1 class="h2 font-weight-bold mb-1" style="background: linear-gradient(135deg, #ff8a00, #e52e71); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Console de Supervision Global
+            </h1>
+            <p class="text-muted mb-0">Pilotage en temps réel des utilisateurs, des ventes, des livraisons et des commissions plateforme.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'create_admin' %}" class="btn btn-outline-warning btn-sm rounded-pill px-3">
+                ➕ Créer un Sous-Admin
+            </a>
+            <a href="/admin/" class="btn btn-outline-light btn-sm rounded-pill px-3" target="_blank">
+                ⚙️ Backend Django Admin
+            </a>
+        </div>
+    </div>
+
+    <!-- METRIQUES FINANCIERES & STATISTIQUES (KPI Cards) -->
+    <div class="row g-3 mb-5">
+        <div class="col-6 col-md-3">
+            <div class="card p-3 h-100 border-0 shadow-sm" style="border-left: 5px solid #ff8a00 !important; background: rgba(30, 32, 40, 0.8);">
+                <small class="text-muted text-uppercase fw-bold">Chiffre d'Affaires Global</small>
+                <h3 class="fw-bold mt-2 mb-1 text-warning">{{ total_revenue }} <small class="fs-6 text-muted">CFA</small></h3>
+                <small class="text-success fs-7">💰 Total brut encaissé</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card p-3 h-100 border-0 shadow-sm" style="border-left: 5px solid #e52e71 !important; background: rgba(30, 32, 40, 0.8);">
+                <small class="text-muted text-uppercase fw-bold">Commissions Plateforme</small>
+                <h3 class="fw-bold mt-2 mb-1 text-danger">{{ total_commission }} <small class="fs-6 text-muted">CFA</small></h3>
+                <small class="text-info fs-7">✨ Gain direct (10% par vente)</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card p-3 h-100 border-0 shadow-sm" style="border-left: 5px solid #20c997 !important; background: rgba(30, 32, 40, 0.8);">
+                <small class="text-muted text-uppercase fw-bold">Versements Vendeurs</small>
+                <h3 class="fw-bold mt-2 mb-1 text-success">{{ total_seller_payout }} <small class="fs-6 text-muted">CFA</small></h3>
+                <small class="text-muted fs-7">🏬 Part des vendeurs (90%)</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card p-3 h-100 border-0 shadow-sm" style="border-left: 5px solid #0d6efd !important; background: rgba(30, 32, 40, 0.8);">
+                <small class="text-muted text-uppercase fw-bold">Frais de Livraison</small>
+                <h3 class="fw-bold mt-2 mb-1 text-primary">{{ total_delivery_fees }} <small class="fs-6 text-muted">CFA</small></h3>
+                <small class="text-info fs-7">🚚 Reversements aux livreurs</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAV TABS DE SUPERVISION -->
+    <ul class="nav nav-pills nav-justified mb-4 gap-2 p-2 card flex-column flex-sm-row border-0 shadow-sm" id="superadminTabs" role="tablist" style="background: rgba(15, 16, 21, 0.9); border-radius: 16px;">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold py-3 rounded-pill" id="users-tab" data-bs-toggle="tab" data-bs-target="#users-pane" type="button" role="tab">
+                👥 Utilisateurs ({{ total_users }})
+                {% if blocked_count > 0 %}
+                    <span class="badge bg-danger ms-1">{{ blocked_count }} bloqué(s)</span>
+                {% endif %}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold py-3 rounded-pill" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders-pane" type="button" role="tab">
+                📦 Commandes ({{ orders.count }})
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold py-3 rounded-pill" id="products-tab" data-bs-toggle="tab" data-bs-target="#products-pane" type="button" role="tab">
+                🏬 Catalogue & Vendeurs ({{ products.count }})
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold py-3 rounded-pill" id="finance-tab" data-bs-toggle="tab" data-bs-target="#finance-pane" type="button" role="tab">
+                💳 Transactions & Finances
+            </button>
+        </li>
+    </ul>
+
+    <!-- CONTENU DES ONGLETS -->
+    <div class="tab-content" id="superadminTabsContent">
+
+        <!-- ================= ONGLET 1: GESTION UTILISATEURS ================= -->
+        <div class="tab-pane fade show active" id="users-pane" role="tabpanel">
+            <div class="card p-4 shadow-lg border-0 mb-4">
+                
+                <!-- Barre de Recherche & Filtres Utilisateurs -->
+                <form method="GET" action="{% url 'superadmin_dashboard' %}" class="row g-3 align-items-center mb-4">
+                    <div class="col-12 col-md-5">
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary text-muted">🔍</span>
+                            <input type="text" name="user_q" value="{{ user_search }}" class="form-control" placeholder="Rechercher par nom, email ou téléphone...">
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <select name="role_filter" class="form-select">
+                            <option value="">Tous les Rôles</option>
+                            <option value="CLIENT" {% if role_filter == 'CLIENT' %}selected{% endif %}>Clients ({{ clients_count }})</option>
+                            <option value="SELLER" {% if role_filter == 'SELLER' %}selected{% endif %}>Vendeurs ({{ sellers_count }})</option>
+                            <option value="DELIVERY" {% if role_filter == 'DELIVERY' %}selected{% endif %}>Livreurs ({{ deliverers_count }})</option>
+                            <option value="ADMIN" {% if role_filter == 'ADMIN' %}selected{% endif %}>Admins ({{ admins_count }})</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary w-100">Filtrer</button>
+                        {% if user_search or role_filter %}
+                            <a href="{% url 'superadmin_dashboard' %}" class="btn btn-outline-secondary">Effacer</a>
+                        {% endif %}
+                    </div>
+                </form>
+
+                <!-- Tableau 360° des Utilisateurs -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Utilisateur</th>
+                                <th>Email / Tél</th>
+                                <th>Rôle Actuel</th>
+                                <th>Statut Compte</th>
+                                <th>Date d'Inscription</th>
+                                <th class="text-end">Actions Superadmin</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in all_users %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="avatar bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px; background: linear-gradient(135deg, #e52e71, #ff8a00);">
+                                            {{ u.username|slice:":1"|upper }}
+                                        </div>
+                                        <div>
+                                            <span class="fw-bold d-block">{{ u.username }}</span>
+                                            {% if u.is_superuser %}
+                                                <span class="badge bg-danger fs-8">👑 SUPERADMIN</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <small class="d-block text-muted">{{ u.email|default:"Non renseigné" }}</small>
+                                    <small class="text-warning">{{ u.phone_number|default:"" }}</small>
+                                </td>
+                                <td>
+                                    <!-- Formulaire de Modification Directe de Rôle -->
+                                    <form action="{% url 'superadmin_change_user_role' u.id %}" method="POST" class="d-inline-block">
+                                        {% csrf_token %}
+                                        <select name="role" onchange="this.form.submit()" class="form-select form-select-sm border-0 fw-bold shadow-sm" 
+                                                style="{% if u.role == 'ADMIN' %}background-color: rgba(220, 53, 69, 0.2); color: #dc3545;{% elif u.role == 'SELLER' %}background-color: rgba(255, 193, 7, 0.2); color: #ffc107;{% elif u.role == 'DELIVERY' %}background-color: rgba(13, 110, 253, 0.2); color: #0d6efd;{% else %}background-color: rgba(40, 167, 69, 0.2); color: #28a745;{% endif %}">
+                                            <option value="CLIENT" {% if u.role == 'CLIENT' %}selected{% endif %}>Client</option>
+                                            <option value="SELLER" {% if u.role == 'SELLER' %}selected{% endif %}>Vendeur</option>
+                                            <option value="DELIVERY" {% if u.role == 'DELIVERY' %}selected{% endif %}>Livreur</option>
+                                            <option value="ADMIN" {% if u.role == 'ADMIN' %}selected{% endif %}>Administrateur</option>
+                                        </select>
+                                    </form>
+                                </td>
+                                <td>
+                                    {% if u.is_blocked %}
+                                        <span class="badge bg-danger text-uppercase px-2 py-1">🚫 SUSPENDU</span>
+                                    {% else %}
+                                        <span class="badge bg-success text-uppercase px-2 py-1">✅ ACTIF</span>
+                                    {% endif %}
+                                </td>
+                                <td><small class="text-muted">{{ u.date_joined|date:"d/m/Y H:i" }}</small></td>
+                                <td class="text-end">
+                                    {% if u.id != request.user.id %}
+                                        <a href="{% url 'superadmin_toggle_block_user' u.id %}" 
+                                           class="btn btn-sm {% if u.is_blocked %}btn-success{% else %}btn-outline-danger{% endif %}"
+                                           onclick="return confirm('Êtes-vous sûr de vouloir {% if u.is_blocked %}débloquer{% else %}suspendre{% endif %} le compte de {{ u.username }} ?');">
+                                            {% if u.is_blocked %}🔓 Débloquer{% else %}🚫 Suspendre{% endif %}
+                                        </a>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Votre Compte</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">Aucun utilisateur trouvé.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= ONGLET 2: SUPERVISION DES COMMANDES & LIVRAISONS ================= -->
+        <div class="tab-pane fade" id="orders-pane" role="tabpanel">
+            <div class="card p-4 shadow-lg border-0 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">📦 Contrôle Global des Commandes</h5>
+                    <!-- Filtres par statut -->
+                    <form method="GET" action="{% url 'superadmin_dashboard' %}" class="d-flex gap-2">
+                        <select name="order_status" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">Tous les statuts</option>
+                            <option value="PENDING" {% if order_status_filter == 'PENDING' %}selected{% endif %}>En attente</option>
+                            <option value="PAID" {% if order_status_filter == 'PAID' %}selected{% endif %}>Payée</option>
+                            <option value="SHIPPED" {% if order_status_filter == 'SHIPPED' %}selected{% endif %}>En cours de livraison</option>
+                            <option value="DELIVERED" {% if order_status_filter == 'DELIVERED' %}selected{% endif %}>Livrée</option>
+                            <option value="CANCELLED" {% if order_status_filter == 'CANCELLED' %}selected{% endif %}>Annulée</option>
+                        </select>
+                    </form>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th># N°</th>
+                                <th>Client</th>
+                                <th>Montant Total</th>
+                                <th>Adresse Livraison</th>
+                                <th>Statut Actuel</th>
+                                <th>Livreur Assigné</th>
+                                <th class="text-end">Actions Superadmin</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td class="fw-bold">#{{ order.id }}</td>
+                                <td>
+                                    <span class="d-block fw-bold">{{ order.user.username }}</span>
+                                    <small class="text-muted">{{ order.created_at|date:"d/m/Y H:i" }}</small>
+                                </td>
+                                <td class="fw-bold text-warning">{{ order.total_amount }} CFA</td>
+                                <td><small class="text-muted">{{ order.shipping_address|truncatechars:35 }}</small></td>
+                                <td>
+                                    <!-- Forcer le statut de commande -->
+                                    <form action="{% url 'superadmin_override_order_status' order.id %}" method="POST" class="d-inline-block">
+                                        {% csrf_token %}
+                                        <select name="status" onchange="this.form.submit()" class="form-select form-select-sm border-0 fw-bold">
+                                            <option value="PENDING" {% if order.status == 'PENDING' %}selected{% endif %}>⏳ En attente</option>
+                                            <option value="PAID" {% if order.status == 'PAID' %}selected{% endif %}>💳 Payée</option>
+                                            <option value="SHIPPED" {% if order.status == 'SHIPPED' %}selected{% endif %}>🚚 En cours</option>
+                                            <option value="DELIVERED" {% if order.status == 'DELIVERED' %}selected{% endif %}>✅ Livrée</option>
+                                            <option value="CANCELLED" {% if order.status == 'CANCELLED' %}selected{% endif %}>❌ Annulée</option>
+                                        </select>
+                                    </form>
+                                </td>
+                                <td>
+                                    {% if order.delivery %}
+                                        {% if order.delivery.delivery_person %}
+                                            <span class="badge bg-primary">🚚 {{ order.delivery.delivery_person.username }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Non assigné</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-secondary">Aucune livraison</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <!-- Modal Réassignation Livreur -->
+                                    <form action="{% url 'assign_delivery' order.id %}" method="POST" class="d-inline-block">
+                                        {% csrf_token %}
+                                        <div class="input-group input-group-sm">
+                                            <select name="deliverer_id" class="form-select form-select-sm">
+                                                <option value="">-- Choisir Livreur --</option>
+                                                {% for d in deliverers %}
+                                                    <option value="{{ d.id }}" {% if order.delivery and order.delivery.delivery_person.id == d.id %}selected{% endif %}>{{ d.username }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <button type="submit" class="btn btn-outline-primary btn-sm">Assigner</button>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">Aucune commande enregistrée.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= ONGLET 3: CATALOGUE & MODERATION ================= -->
+        <div class="tab-pane fade" id="products-pane" role="tabpanel">
+            <div class="card p-4 shadow-lg border-0 mb-4">
+                <h5 class="fw-bold mb-4">🏬 Modération des Produits & Catalogue Vendeurs</h5>
+
+                <div class="row g-4">
+                    {% for p in products %}
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <div class="card h-100 shadow-sm border-0 position-relative {% if not p.is_active %}opacity-50{% endif %}" style="background: rgba(30, 32, 40, 0.7);">
+                            {% if p.image %}
+                                <img src="{{ p.image.url }}" class="card-img-top" style="height: 160px; object-fit: cover;" alt="{{ p.name }}">
+                            {% else %}
+                                <div class="bg-dark text-muted d-flex align-items-center justify-content-center" style="height: 160px;">Pas d'image</div>
+                            {% endif %}
+
+                            <div class="card-body p-3">
+                                <span class="badge bg-secondary mb-1">{{ p.category.name }}</span>
+                                <h6 class="fw-bold mb-1 text-truncate">{{ p.name }}</h6>
+                                <p class="text-muted small mb-2">Vendeur: <span class="text-warning fw-bold">{{ p.seller.username|default:"Admin" }}</span></p>
+                                
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <span class="fw-bold text-success">{{ p.price }} CFA</span>
+                                    <small class="text-muted">Stock: {{ p.stock }}</small>
+                                </div>
+                            </div>
+                            
+                            <div class="card-footer bg-transparent border-top border-secondary p-2 text-center">
+                                <a href="{% url 'superadmin_toggle_product_status' p.id %}" 
+                                   class="btn btn-sm w-100 {% if p.is_active %}btn-outline-danger{% else %}btn-success{% endif %}">
+                                    {% if p.is_active %}👁️ Masquer du Catalogue{% else %}✅ Publier / Activer{% endif %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-5 text-muted">Aucun produit dans le catalogue.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= ONGLET 4: TRANSACTIONS & FINANCES ================= -->
+        <div class="tab-pane fade" id="finance-pane" role="tabpanel">
+            <div class="card p-4 shadow-lg border-0 mb-4">
+                <h5 class="fw-bold mb-4">💳 Journal Complet des Transactions & Commissionnement</h5>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>N° Transaction</th>
+                                <th>Commande</th>
+                                <th>Total Encassé</th>
+                                <th>Commission Plateforme (10%)</th>
+                                <th>Part Vendeur (90%)</th>
+                                <th>Mode Paiement</th>
+                                <th>Date & Heure</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for txn in transactions %}
+                            <tr>
+                                <td class="fw-bold text-info">{{ txn.transaction_id }}</td>
+                                <td>#{{ txn.order.id }} ({{ txn.order.user.username }})</td>
+                                <td class="fw-bold text-warning">{{ txn.total_amount }} CFA</td>
+                                <td class="fw-bold text-danger">+ {{ txn.platform_commission }} CFA</td>
+                                <td class="fw-bold text-success">{{ txn.seller_amount }} CFA</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ txn.get_payment_method_display }}</span>
+                                </td>
+                                <td><small class="text-muted">{{ txn.created_at|date:"d/m/Y H:i" }}</small></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">Aucune transaction enregistrée.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

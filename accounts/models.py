@@ -12,6 +12,7 @@ class CustomUser(AbstractUser):
     role_request = models.CharField(max_length=15, choices=ROLE_CHOICES, blank=True, null=True)
     role_request_rejected = models.BooleanField(default=False)
     is_approved = models.BooleanField(default=True, help_text="Permet aux Vendeurs/Livreurs d'accéder à leurs espaces.")
+    is_blocked = models.BooleanField(default=False, help_text="Permet d'interdire l'accès à un utilisateur suspendu par le Superadmin.")
     
     # Granular Permissions for Secondary Admins
     can_manage_orders = models.BooleanField(default=True)

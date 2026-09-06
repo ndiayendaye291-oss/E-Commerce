@@ -208,9 +208,12 @@
                         </a>
                     </li>
                     {% endif %}
-                    {% if user.is_staff or user.role == 'ADMIN' %}
+                    {% if user.is_superuser or user.role == 'ADMIN' %}
                     <li class="nav-item ms-2">
-                        <a class="btn btn-outline-warning btn-sm" href="/admin/">Admin</a>
+                        <a class="btn btn-sm fw-bold text-white px-3 shadow-sm" style="background: linear-gradient(135deg, #e52e71, #ff8a00); border: none; border-radius: 10px;" href="{% url 'superadmin_dashboard' %}">👑 Console Superadmin</a>
+                    </li>
+                    <li class="nav-item ms-1">
+                        <a class="btn btn-outline-warning btn-sm" href="/admin/">Django Admin</a>
                     </li>
                     {% endif %}
                     
